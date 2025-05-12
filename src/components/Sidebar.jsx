@@ -6,6 +6,7 @@ import {
   FiMessageCircle,
   FiAlertCircle,
   FiPieChart,
+  FiCheckSquare,
   FiLogOut,
 } from 'react-icons/fi'
 
@@ -17,6 +18,7 @@ const Sidebar = () => {
     { name: 'Messages', path: '/messages', icon: FiMessageCircle },
     { name: 'Complaints', path: '/complaints', icon: FiAlertCircle },
     { name: 'Analytics', path: '/analytics', icon: FiPieChart },
+    { name: 'To-Do', path: '/todo', icon: FiCheckSquare },
   ]
 
   const handleLogout = () => {
