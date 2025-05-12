@@ -7,6 +7,7 @@ import Complaints from './pages/Complaints'
 import Analytics from './pages/Analytics'
 import ProtectedRoute from './components/ProtectedRoute'
 import Todo from './pages/Todo'
+import AdminUsers from './pages/AdminUsers'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/complaints" element={<Complaints />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/todo" element={<Todo />} />
+        <Route path="/admin-users" element={<AdminUsers />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

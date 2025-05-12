@@ -288,7 +288,7 @@ const Complaints = () => {
 
 const thStyle = {
   textAlign: 'left',
-  padding: '10px',
+  padding: '30px',
   fontWeight: 'bold',
   borderBottom: '1px solid #E2E8F0'
 }

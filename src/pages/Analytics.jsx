@@ -1,13 +1,36 @@
-// pages/Analytics.jsx
-import React from 'react'
+import React, { useState } from 'react'
 import {
-  SimpleGrid,
   Box,
-  Text
+  Text,
+  Select,
+  SimpleGrid,
+  Card,
+  CardHeader,
+  CardBody,
 } from '@chakra-ui/react'
 import DashboardLayout from '../components/DashboardLayout'
 import { useQuery } from '@tanstack/react-query'
 import api from '../api'
+
+import { Bar, Pie } from 'react-chartjs-2'
+import {
+  Chart as ChartJS,
+  BarElement,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+} from 'chart.js'
+
+ChartJS.register(
+  BarElement,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+)
 
 const fetchAnalytics = async () => {
   const res = await api.get('/api/dashboard/analytics')
@@ -15,60 +38,91 @@ const fetchAnalytics = async () => {
 }
 
 const Analytics = () => {
+  const [range, setRange] = useState('all')
   const { data, isLoading } = useQuery({
-    queryKey: ['analytics'],
-    queryFn: fetchAnalytics
+    queryKey: ['analytics', range],
+    queryFn: fetchAnalytics,
+    staleTime: 5 * 60 * 1000,
   })
-  
 
-  if (isLoading) return <DashboardLayout>Loading...</DashboardLayout>
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <Text>Loading charts...</Text>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>
-      <Text fontSize="2xl" mb="6">
-        Analytics Overview
-      </Text>
+      <Box mb="6">
+        <Text fontSize="2xl">Analytics Dashboard</Text>
+        <Select mt="2" w="200px" value={range} onChange={(e) => setRange(e.target.value)}>
+          <option value="all">All Time</option>
+          <option value="30">Last 30 Days</option>
+          <option value="7">Last 7 Days</option>
+        </Select>
+      </Box>
 
-      <SimpleGrid columns={[1, 2, 3]} spacing="6">
-        <AnalyticsCard label="Total Messages" value={data.totalMessages} />
-        <AnalyticsCard label="Total Complaints" value={data.totalComplaints} />
-        <AnalyticsCard
-          label="Resolved Complaints"
-          value={data.resolvedComplaints}
-        />
-        <AnalyticsCard
-          label="Unresolved Complaints"
-          value={data.unresolvedComplaints}
-        />
-        <AnalyticsCard
-          label="Product Inquiries"
-          value={data.productInquiries}
-        />
-        <AnalyticsCard
-          label="Order Modifications"
-          value={data.orderModifications}
-        />
+      <SimpleGrid columns={[1, 2]} spacing="6">
+        {/* Message Type Chart */}
+        <Card>
+          <CardHeader>
+            <Text fontWeight="bold">Messages by Type</Text>
+          </CardHeader>
+          <CardBody>
+            <Bar
+              data={{
+                labels: ['Complaints', 'Inquiries', 'Modifications'],
+                datasets: [
+                  {
+                    label: 'Count',
+                    data: [
+                      data.totalComplaints,
+                      data.productInquiries,
+                      data.orderModifications,
+                    ],
+                    backgroundColor: ['#E53E3E', '#3182CE', '#38A169'],
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                },
+              }}
+            />
+          </CardBody>
+        </Card>
+
+        {/* Complaint Status Chart */}
+        <Card>
+          <CardHeader>
+            <Text fontWeight="bold">Complaint Status</Text>
+          </CardHeader>
+          <CardBody>
+            <Pie
+              data={{
+                labels: ['Resolved', 'Unresolved'],
+                datasets: [
+                  {
+                    data: [data.resolvedComplaints, data.unresolvedComplaints],
+                    backgroundColor: ['#38A169', '#E53E3E'],
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { position: 'bottom' },
+                },
+              }}
+            />
+          </CardBody>
+        </Card>
       </SimpleGrid>
     </DashboardLayout>
-  )
-}
-
-const AnalyticsCard = ({ label, value }) => {
-  return (
-    <Box
-      bg="white"
-      p="6"
-      borderRadius="md"
-      boxShadow="md"
-      textAlign="center"
-    >
-      <Text fontSize="md" color="gray.500">
-        {label}
-      </Text>
-      <Text fontSize="2xl" fontWeight="bold" color="gray.800">
-        {value}
-      </Text>
-    </Box>
   )
 }
 
