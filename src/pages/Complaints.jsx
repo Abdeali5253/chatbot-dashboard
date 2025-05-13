@@ -1,304 +1,402 @@
-// // pages/Complaints.jsx
-// import React from 'react'
+// import React, { useState } from 'react'
 // import {
 //   Box,
-//   Button,
+//   Text,
+//   Table,
+//   Thead,
+//   Tbody,
+//   Tr,
+//   Th,
+//   Td,
 //   Tag,
-//   Text
+//   Button,
+//   Select,
+//   Input,
 // } from '@chakra-ui/react'
-// import DashboardLayout from '../components/DashboardLayout'
 // import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 // import api from '../api'
+// import DashboardLayout from '../components/DashboardLayout'
+// import LoaderSpinner from '../components/LoaderSpinner'
 
 // const fetchComplaints = async () => {
 //   const res = await api.get('/api/dashboard/complaints')
 //   return res.data
 // }
 
-// const updateComplaintStatus = async ({ id, status }) => {
-//   const res = await api.patch(`/api/dashboard/complaint/${id}`, { status })
-//   return res.data
-// }
-
 // const Complaints = () => {
+//   const [filterStatus, setFilterStatus] = useState('all')
+//   const [limit, setLimit] = useState(10)
+//   const [currentPage, setCurrentPage] = useState(1)
+//   const [search, setSearch] = useState('')
 //   const queryClient = useQueryClient()
-//   const { data, isLoading } = useQuery({
+
+//   const { data, isLoading, isError, isFetching } = useQuery({
 //     queryKey: ['complaints'],
-//     queryFn: fetchComplaints
-//   })
-  
-
-//   const mutation = useMutation({
-//     mutationFn: updateComplaintStatus,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['complaints'] })
-//     }
+//     queryFn: fetchComplaints,
+//     staleTime: 5 * 60 * 1000,
+//     cacheTime: 10 * 60 * 1000,
+//     keepPreviousData: true,
+//     retry: 3,
 //   })
 
-//   const handleToggleStatus = (complaint) => {
-//     mutation.mutate({
-//       id: complaint._id,
-//       status: complaint.status === 'done' ? 'pending' : 'done',
-//     })
-//   }
+//   const toggleStatus = useMutation({
+//     mutationFn: ({ id, status }) => api.patch(`/api/dashboard/complaint/${id}`, { status }),
+//     onSuccess: () => queryClient.invalidateQueries(['complaints']),
+//   })
 
-//   if (isLoading) return <DashboardLayout>Loading...</DashboardLayout>
+//   const filtered = (data || [])
+//     .filter((c) => (filterStatus === 'all' ? true : (c.status || 'pending') === filterStatus))
+//     .filter(c =>
+//       c.message?.toLowerCase().includes(search.toLowerCase()) ||
+//       c.userNumber.includes(search)
+//     )
+//     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+
+//   const totalPages = Math.ceil(filtered.length / limit)
+//   const paginated = filtered.slice((currentPage - 1) * limit, currentPage * limit)
 
 //   return (
 //     <DashboardLayout>
-//       <Text fontSize="2xl" mb="6">
-//         Complaints
-//       </Text>
+//       <Text fontSize="2xl" mb="4">Complaints</Text>
 
-//       <Box overflowX="auto" bg="white" borderRadius="md" boxShadow="md" p="4">
-//         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-//           <thead style={{ backgroundColor: '#f7fafc' }}>
-//             <tr>
-//               <th style={thStyle}>User Number</th>
-//               <th style={thStyle}>Message</th>
-//               <th style={thStyle}>Status</th>
-//               <th style={thStyle}>Action</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {data.map((complaint) => (
-//               <tr key={complaint._id}>
-//                 <td style={tdStyle}>{complaint.userNumber}</td>
-//                 <td style={tdStyle}>{complaint.message}</td>
-//                 <td style={tdStyle}>
-//                   <Tag
-//                     colorScheme={
-//                       complaint.status === 'done' ? 'green' : 'red'
-//                     }
-//                   >
-//                     {complaint.status === 'done' ? 'Done' : 'Pending'}
-//                   </Tag>
-//                 </td>
-//                 <td style={tdStyle}>
-//                   <Button
-//                     size="sm"
-//                     onClick={() => handleToggleStatus(complaint)}
-//                     colorScheme={
-//                       complaint.status === 'done' ? 'orange' : 'green'
-//                     }
-//                   >
-//                     Mark {complaint.status === 'done' ? 'Undone' : 'Done'}
-//                   </Button>
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
+//       <Box display="flex" gap="4" flexWrap="wrap" mb="4">
+//         <Select
+//           w="150px"
+//           value={filterStatus}
+//           onChange={(e) => {
+//             setFilterStatus(e.target.value)
+//             setCurrentPage(1)
+//           }}
+//         >
+//           <option value="all">All</option>
+//           <option value="pending">Pending</option>
+//           <option value="done">Done</option>
+//         </Select>
+//         <Input
+//           placeholder="Search message or number"
+//           value={search}
+//           onChange={(e) => {
+//             setSearch(e.target.value)
+//             setCurrentPage(1)
+//           }}
+//           w="300px"
+//         />
+//         <Select
+//           w="150px"
+//           value={limit}
+//           onChange={(e) => {
+//             setLimit(Number(e.target.value))
+//             setCurrentPage(1)
+//           }}
+//         >
+//           {[10, 50, 100].map(n => (
+//             <option key={n} value={n}>{n} per page</option>
+//           ))}
+//         </Select>
 //       </Box>
+
+//       {isLoading && !data ? (
+//         <LoaderSpinner label="Loading complaints..." />
+//       ) : isError ? (
+//         <Box bg="red.50" p="4" borderRadius="md">
+//           <Text color="red.500">Failed to load complaints. Retrying...</Text>
+//         </Box>
+//       ) : (
+//         <>
+//           {isFetching && (
+//             <Text fontSize="sm" color="gray.500" mb="2">Refreshing complaints...</Text>
+//           )}
+
+//           <Box overflowX="auto" borderRadius="md" bg="white" p="4" boxShadow="sm">
+//             <Table>
+//               <Thead bg="gray.50">
+//                 <Tr>
+//                   <Th style={{ minWidth: '140px', whiteSpace: 'nowrap' }}>User Number</Th>
+//                   <Th style={{ minWidth: '500px' }}>Message</Th>
+//                   <Th>Status</Th>
+//                   <Th>Action</Th>
+//                 </Tr>
+//               </Thead>
+//               <Tbody>
+//                 {paginated.map((c) => (
+//                   <Tr key={c._id}>
+//                     <Td whiteSpace="nowrap">{c.userNumber}</Td>
+//                     <Td maxW="500px" whiteSpace="normal" wordBreak="break-word">{c.message}</Td>
+//                     <Td>
+//                       <Tag colorScheme={c.status === 'done' ? 'green' : 'red'}>
+//                         {c.status === 'done' ? 'Done' : 'Pending'}
+//                       </Tag>
+//                     </Td>
+//                     <Td>
+//                       <Box display="flex" flexDirection="column" gap="2px">
+//                         <Button
+//                           size="sm"
+//                           colorScheme={c.status === 'done' ? 'orange' : 'green'}
+//                           onClick={() => toggleStatus.mutate({
+//                             id: c._id,
+//                             status: c.status === 'done' ? 'pending' : 'done',
+//                           })}
+//                         >
+//                           Mark {c.status === 'done' ? 'Undone' : 'Done'}
+//                         </Button>
+//                         <Button
+//                           size="sm"
+//                           colorScheme="blue"
+//                           onClick={() => {
+//                             const existing = JSON.parse(localStorage.getItem('todoItems') || '[]')
+//                             const task = `${c.userNumber}: ${c.message}`
+//                             localStorage.setItem('todoItems', JSON.stringify([
+//                               ...existing,
+//                               { text: task, done: false }
+//                             ]))
+//                             window.open('/todo', '_blank')
+//                           }}
+//                         >
+//                           Send to Todo
+//                         </Button>
+//                       </Box>
+//                     </Td>
+//                   </Tr>
+//                 ))}
+//               </Tbody>
+//             </Table>
+//           </Box>
+
+//           <Box mt="4" display="flex" alignItems="center" justifyContent="space-between">
+//             <Text fontSize="sm">Page {currentPage} of {totalPages}</Text>
+//             <Box display="flex" gap="8px">
+//               <Button
+//                 size="sm"
+//                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+//                 isDisabled={currentPage === 1}
+//               >
+//                 Prev
+//               </Button>
+//               <Button
+//                 size="sm"
+//                 onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+//                 isDisabled={currentPage === totalPages}
+//               >
+//                 Next
+//               </Button>
+//             </Box>
+//           </Box>
+//         </>
+//       )}
 //     </DashboardLayout>
 //   )
 // }
 
-// const thStyle = {
-//   textAlign: 'left',
-//   padding: '10px',
-//   fontWeight: 'bold',
-//   borderBottom: '1px solid #E2E8F0'
-// }
-
-// const tdStyle = {
-//   padding: '10px',
-//   borderBottom: '1px solid #EDF2F7',
-//   verticalAlign: 'top'
-// }
-
 // export default Complaints
-
 
 import React, { useState } from 'react'
 import {
   Box,
-  Button,
-  Tag,
   Text,
-  Select
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Tag,
+  Button,
+  Select,
+  Input,
+  Flex,
 } from '@chakra-ui/react'
-import DashboardLayout from '../components/DashboardLayout'
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api'
+import DashboardLayout from '../components/DashboardLayout'
+import LoaderSpinner from '../components/LoaderSpinner'
 
 const fetchComplaints = async () => {
   const res = await api.get('/api/dashboard/complaints')
   return res.data
 }
 
-const updateComplaintStatus = async ({ id, status }) => {
-  const res = await api.patch(`/api/dashboard/complaint/${id}`, { status })
-  return res.data
+const isWithinDays = (timestamp, range) => {
+  if (range === 'all') return true
+  const now = new Date()
+  const date = new Date(timestamp)
+
+  if (range === 'today') {
+    return now.toDateString() === date.toDateString()
+  }
+
+  const diff = (now - date) / (1000 * 60 * 60 * 24)
+  return diff <= Number(range)
 }
 
 const Complaints = () => {
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [dateRange, setDateRange] = useState('all')
+  const [sortOrder, setSortOrder] = useState('desc')
+  const [search, setSearch] = useState('')
+  const [limit, setLimit] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
+
   const queryClient = useQueryClient()
-  const { data, isLoading } = useQuery({
+
+  const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['complaints'],
     queryFn: fetchComplaints,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000
+    cacheTime: 10 * 60 * 1000,
+    keepPreviousData: true,
+    retry: 3,
   })
 
-  const mutation = useMutation({
-    mutationFn: updateComplaintStatus,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['complaints'] })
-    }
+  const toggleStatus = useMutation({
+    mutationFn: ({ id, status }) =>
+      api.patch(`/api/dashboard/complaint/${id}`, { status }),
+    onSuccess: () => queryClient.invalidateQueries(['complaints']),
   })
 
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const filtered = (data || [])
+    .filter(c => statusFilter === 'all' || (c.status || 'pending') === statusFilter)
+    .filter(c => isWithinDays(c.timestamp, dateRange))
+    .filter(c =>
+      c.message?.toLowerCase().includes(search.toLowerCase()) ||
+      c.userNumber.includes(search)
+    )
+    .sort((a, b) =>
+      sortOrder === 'desc'
+        ? new Date(b.timestamp) - new Date(a.timestamp)
+        : new Date(a.timestamp) - new Date(b.timestamp)
+    )
 
-  if (isLoading) return <DashboardLayout>Loading...</DashboardLayout>
-
-  const filteredComplaints = (data || [])
-  .filter((c) => {
-    if (filterStatus === 'all') return true
-    return (c.status || 'pending') === filterStatus
-  })
-  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) 
-
-
-  const totalPages = Math.ceil(filteredComplaints.length / pageSize)
-  const paginatedComplaints = filteredComplaints.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
-
-  const handleToggleStatus = (complaint) => {
-    mutation.mutate({
-      id: complaint._id,
-      status: complaint.status === 'done' ? 'pending' : 'done',
-    })
-  }
+  const totalPages = Math.ceil(filtered.length / limit)
+  const paginated = filtered.slice((currentPage - 1) * limit, currentPage * limit)
 
   return (
     <DashboardLayout>
-      <Text fontSize="2xl" mb="4">
-        Complaints
-      </Text>
+      <Flex mb="4" align="center" justify="space-between" wrap="wrap" gap="4">
+        <Text fontSize="2xl" fontWeight="bold">Complaints</Text>
 
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb="4">
-        <Select
-          w="200px"
-          value={filterStatus}
-          onChange={(e) => {
-            setFilterStatus(e.target.value)
-            setCurrentPage(1)
-          }}
-        >
-          <option value="all">All</option>
-          <option value="pending">Pending</option>
-          <option value="done">Done</option>
-        </Select>
-
-        <Select
-          w="160px"
-          value={pageSize}
-          onChange={(e) => {
-            setPageSize(Number(e.target.value))
-            setCurrentPage(1)
-          }}
-        >
-          {[10, 50, 100].map((size) => (
-            <option key={size} value={size}>{size} per page</option>
-          ))}
-        </Select>
-      </Box>
-
-      <Box overflowX="auto" bg="white" borderRadius="md" boxShadow="md" p="4">
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead style={{ backgroundColor: '#f7fafc' }}>
-            <tr>
-              <th style={thStyle}>User Number</th>
-              <th style={thStyle}>Message</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedComplaints.map((complaint) => (
-              <tr key={complaint._id}>
-                <td style={tdStyle}>{complaint.userNumber}</td>
-                <td style={tdStyle}>{complaint.message}</td>
-                <td style={tdStyle}>
-                  <Tag colorScheme={complaint.status === 'done' ? 'green' : 'red'}>
-                    {complaint.status === 'done' ? 'Done' : 'Pending'}
-                  </Tag>
-                </td>
-                <td style={tdStyle}>
-  <Box display="flex" flexDirection="column" gap="2px">
-    <Button
-      size="sm"
-      onClick={() => handleToggleStatus(complaint)}
-      colorScheme={complaint.status === 'done' ? 'orange' : 'green'}
-    >
-      Mark {complaint.status === 'done' ? 'Undone' : 'Done'}
-    </Button>
-    <Button
-      size="sm"
-      colorScheme="blue"
-      onClick={() => {
-        const currentTodos = JSON.parse(localStorage.getItem('todoItems') || '[]')
-        const message = `${complaint.userNumber}: ${complaint.message}`
-        const updated = [...currentTodos, { text: message, done: false }]
-        localStorage.setItem('todoItems', JSON.stringify(updated))
-        window.open('/todo', '_blank')
-      }}
-    >
-      Send to Todo
-    </Button>
-  </Box>
-</td> 
-              </tr>
+        <Flex gap="3" wrap="wrap" justify={['flex-start', 'flex-end']}>
+          <Select w="150px" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1) }}>
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="done">Done</option>
+          </Select>
+          <Select w="150px" value={dateRange} onChange={(e) => { setDateRange(e.target.value); setCurrentPage(1) }}>
+            <option value="all">All Dates</option>
+            <option value="today">Today</option>
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+          </Select>
+          <Select w="150px" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </Select>
+          <Input
+            placeholder="Search message or number"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setCurrentPage(1)
+            }}
+            w="250px"
+          />
+          <Select w="150px" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setCurrentPage(1) }}>
+            {[10, 50, 100].map(n => (
+              <option key={n} value={n}>{n} per page</option>
             ))}
-          </tbody>
-        </table>
-      </Box>
+          </Select>
+        </Flex>
+      </Flex>
 
-      <Box mt="4" display="flex" justifyContent="space-between" alignItems="center">
-        <Text fontSize="sm">
-          Page {currentPage} of {totalPages}
-        </Text>
-        <Box>
-          <Button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            isDisabled={currentPage === 1}
-            mr="2"
-            size="sm"
-          >
-            Prev
-          </Button>
-          <Button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            isDisabled={currentPage === totalPages}
-            size="sm"
-          >
-            Next
-          </Button>
+      {isLoading && !data ? (
+        <LoaderSpinner label="Loading complaints..." />
+      ) : isError ? (
+        <Box bg="red.50" p="4" borderRadius="md">
+          <Text color="red.500">Failed to load complaints. Retrying...</Text>
         </Box>
-      </Box>
+      ) : (
+        <>
+          {isFetching && (
+            <Text fontSize="sm" color="gray.500" mb="2">Refreshing complaints...</Text>
+          )}
+
+          <Box overflowX="auto" borderRadius="md" bg="white" p="4" boxShadow="sm">
+            <Table>
+              <Thead bg="gray.50">
+                <Tr>
+                  <Th minW="140px" whiteSpace="nowrap">User Number</Th>
+                  <Th minW="500px">Message</Th>
+                  <Th>Status</Th>
+                  <Th>Action</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {paginated.map((c) => (
+                  <Tr key={c._id}>
+                    <Td whiteSpace="nowrap">{c.userNumber}</Td>
+                    <Td maxW="500px" whiteSpace="normal" wordBreak="break-word">{c.message}</Td>
+                    <Td>
+                      <Tag colorScheme={c.status === 'done' ? 'green' : 'red'}>
+                        {c.status === 'done' ? 'Done' : 'Pending'}
+                      </Tag>
+                    </Td>
+                    <Td>
+                      <Flex flexDirection="column" gap="2px">
+                        <Button
+                          size="sm"
+                          colorScheme={c.status === 'done' ? 'orange' : 'green'}
+                          onClick={() => toggleStatus.mutate({
+                            id: c._id,
+                            status: c.status === 'done' ? 'pending' : 'done',
+                          })}
+                        >
+                          Mark {c.status === 'done' ? 'Undone' : 'Done'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          onClick={() => {
+                            const todoItems = JSON.parse(localStorage.getItem('todoItems') || '[]')
+                            const newItem = `${c.userNumber}: ${c.message}`
+                            localStorage.setItem('todoItems', JSON.stringify([
+                              ...todoItems,
+                              { text: newItem, done: false }
+                            ]))
+                            window.open('/todo', '_blank')
+                          }}
+                        >
+                          Send to Todo
+                        </Button>
+                      </Flex>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </Box>
+
+          <Flex mt="4" justify="space-between" align="center">
+            <Text fontSize="sm">Page {currentPage} of {totalPages}</Text>
+            <Flex gap="8px">
+              <Button
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                isDisabled={currentPage === 1}
+              >
+                Prev
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                isDisabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </Flex>
+          </Flex>
+        </>
+      )}
     </DashboardLayout>
   )
-}
-
-const thStyle = {
-  textAlign: 'left',
-  padding: '30px',
-  fontWeight: 'bold',
-  borderBottom: '1px solid #E2E8F0'
-}
-
-const tdStyle = {
-  padding: '10px',
-  borderBottom: '1px solid #EDF2F7',
-  verticalAlign: 'top',
-  whiteSpace: 'normal',
-  wordBreak: 'break-word',
 }
 
 export default Complaints
