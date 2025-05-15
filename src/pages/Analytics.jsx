@@ -161,7 +161,7 @@ ChartJS.register(
 )
 
 const fetchMessages = async () => {
-  const res = await api.get('/api/dashboard/messages')
+  const res = await api.get('/messages')
   return res.data
 }
 

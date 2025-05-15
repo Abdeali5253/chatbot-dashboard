@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../api'
 
 const fetchAnalytics = async () => {
-  const res = await api.get('/api/dashboard/analytics')
+  const res = await api.get('/analytics')
   return res.data
 }
 
