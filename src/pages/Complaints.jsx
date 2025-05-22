@@ -58,7 +58,7 @@ const Complaints = () => {
 
   const toggleStatus = useMutation({
     mutationFn: ({ id, status }) =>
-      api.patch(`/api/dashboard/complaint/${id}`, { status }),
+      api.patch(`/complaint/${id}`, { status }),
     onSuccess: () => queryClient.invalidateQueries(['complaints']),
   })
 
