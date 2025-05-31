@@ -153,7 +153,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api'
 
 const fetchTodos = async () => {
-  const res = await api.get('/api/dashboard/todo')
+  const res = await api.get('/todo')
   return res.data
 }
 
