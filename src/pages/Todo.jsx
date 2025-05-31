@@ -158,16 +158,16 @@ const fetchTodos = async () => {
 }
 
 const addTodo = async ({ text }) => {
-  const res = await api.post('/api/dashboard/todo', { text })
+  const res = await api.post('/todo', { text })
   return res.data
 }
 
 const toggleTodo = async ({ id, done }) => {
-  await api.patch(`/api/dashboard/todo/${id}`, { done })
+  await api.patch(`/todo/${id}`, { done })
 }
 
 const deleteTodo = async (id) => {
-  await api.delete(`/api/dashboard/todo/${id}`)
+  await api.delete(`/todo/${id}`)
 }
 
 const Todo = () => {
