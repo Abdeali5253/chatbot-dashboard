@@ -1,10 +1,9 @@
-export default function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.dashboardinfo.link');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-  // ...your API logic...
+// src/api/dashboard/analytics.js
+
+import api from '../index' // this imports your configured Axios instance
+
+export const fetchAnalytics = async () => {
+    // This URL should point to your backend API endpoint
+    const res = await api.get('/dashboard/analytics')
+    return res.data
 }
