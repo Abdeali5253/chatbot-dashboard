@@ -154,6 +154,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 
+
 ChartJS.register(
   ArcElement, Tooltip, Legend,
   CategoryScale, LinearScale, BarElement,
